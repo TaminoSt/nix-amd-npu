@@ -8,7 +8,7 @@
 # ============================================================================
 #
 # CRITICAL: XRT and XDNA driver versions MUST match exactly!
-#   - XRT version format: YYYYMM.MAJOR.MINOR.PATCH (e.g., 202610.2.21.21)
+#   - XRT version format: MAJOR.MINOR.PATCH (e.g., 2.21.75)
 #   - XDNA driver uses same version scheme
 #   - Mismatched versions will cause runtime failures
 #
@@ -23,7 +23,7 @@
 #   │    Vitis AI     │  unilog → xir → target-factory → vart
 #   │                 │  graph-engine, dynamic-dispatch, xaiengine
 #   ├─────────────────┤
-#   │  XRT + XDNA     │  Must be same version (202610.2.21.21)
+#   │  XRT + XDNA     │  Must be same version (2.21.75)
 #   ├─────────────────┤
 #   │  Linux Kernel   │  6.10+ required, 6.14+ has mainline amdxdna
 #   └─────────────────┘
@@ -46,22 +46,22 @@
   # IMPORTANT: These two versions MUST match! Update both together.
   # ==========================================================================
   xrt = {
-    version = "202610.2.21.21"; # Format: YYYYMM.MAJOR.MINOR.PATCH
+    version = "2.21.75";
     src = {
       owner = "Xilinx";
       repo = "XRT";
-      rev = "202610.2.21.21";
+      rev = "2.21.75";
       hash = "sha256-Foj33/U6waL81EzJ0ah66xCXEGWEkvhwmurKobfCevE=";
     };
   };
 
   xdna-driver = {
-    version = "202610.2.21.21"; # MUST match xrt.version above!
-    pluginVersion = "2.21.0"; # Shared library version (libxrt_driver_xdna.so.2.21.0)
+    version = "2.21.75"; # MUST match xrt.version above!
+    pluginVersion = "2.21.75"; # Shared library version (libxrt_driver_xdna.so.2.21.0)
     src = {
       owner = "amd";
       repo = "xdna-driver";
-      rev = "202610.2.21.21";
+      rev = "2.21.75";
       hash = "sha256-s06LKWwQNmWlmQSe+XNUOaVclnw1tAJPCFQvgDp/wCY=";
     };
   };

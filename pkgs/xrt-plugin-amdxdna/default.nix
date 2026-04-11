@@ -17,14 +17,14 @@
 
 let
   # Must match XRT version for ABI compatibility
-  xrtVersion = "202610.2.21.21";
+  xrtVersion = "2.21.75";
 
   # Fetch XRT source for internal headers
   xrtSrc = fetchFromGitHub {
     owner = "Xilinx";
     repo = "XRT";
     rev = xrtVersion;
-    hash = "sha256-Foj33/U6waL81EzJ0ah66xCXEGWEkvhwmurKobfCevE=";
+    hash = "sha256-f/EofQsjFXC6uMI5pzZkofATVBarRHp9Yt/ADBWL2/8=";
     fetchSubmodules = true;
   };
 in
@@ -38,7 +38,7 @@ stdenv.mkDerivation rec {
     owner = "amd";
     repo = "xdna-driver";
     rev = version;
-    hash = "sha256-vXA8MzY0+KNquDG7jY3pZkm6lyM+V493xRmojl+wuIw=";
+    hash = "sha256-pc9ou88iNAQpjcFvv9NluF8ag87v1KA/14bgfKWe0NE=";
     fetchSubmodules = true;
   };
 

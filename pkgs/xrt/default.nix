@@ -28,7 +28,7 @@
 
 stdenv.mkDerivation rec {
   pname = "xrt";
-  version = "202610.2.21.21";
+  version = "2.21.75";
 
   src = fetchFromGitHub {
     owner = "Xilinx";
