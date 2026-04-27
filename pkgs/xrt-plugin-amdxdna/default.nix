@@ -38,7 +38,7 @@ stdenv.mkDerivation rec {
     owner = "amd";
     repo = "xdna-driver";
     rev = version;
-    hash = "sha256-pc9ou88iNAQpjcFvv9NluF8ag87v1KA/14bgfKWe0NE=";
+    hash = "sha256-bBiI42bwap6O59MQdIylX7uz+fLUF75RTyNWTJfAFds=";
     fetchSubmodules = true;
   };
 
