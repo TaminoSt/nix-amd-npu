@@ -24,7 +24,7 @@ let
     owner = "Xilinx";
     repo = "XRT";
     rev = xrtVersion;
-    hash = "sha256-f/EofQsjFXC6uMI5pzZkofATVBarRHp9Yt/ADBWL2/8=";
+    hash = "sha256-sujiSRZuIelhvUew7yeCfApAmp/Pf2+F38KO9cxI2HE=";
     fetchSubmodules = true;
   };
 in
