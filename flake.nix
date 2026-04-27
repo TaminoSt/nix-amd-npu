@@ -3,7 +3,7 @@
 
   inputs = {
     # Use fork with vitis-ai branch containing xrt, xrt-plugin-amdxdna, and NixOS module
-    nixpkgs.url = "github:SzczurekYT/nixpkgs/vitis-ai";
+    nixpkgs.url = "github:z4m1n0/nixpkgs/vitis-ai";
     flake-parts.url = "github:hercules-ci/flake-parts";
   };
 
