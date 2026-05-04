@@ -25,7 +25,9 @@
 
         xrt-plugin-amdxdna = final.callPackage ../pkgs/xrt-plugin-amdxdna { };
 
-        xrt-amdxdna = final.callPackage ../pkgs/xrt-amdxdna { };
+        xrt-amdxdna = final.callPackage ../pkgs/xrt-amdxdna {
+          inherit (final) xrt xrt-plugin-amdxdna;
+        };
 
         # Firmware and kernel driver (not yet in nixpkgs)
         amdxdna-firmware = final.callPackage ./pkgs/amdxdna-firmware { };
