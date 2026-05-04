@@ -23,7 +23,9 @@
 
       xrt-plugin-amdxdna = pkgs.callPackage ../pkgs/xrt-plugin-amdxdna { };
 
-      xrt-amdxdna = pkgs.callPackage ../pkgs/xrt-amdxdna { };
+      xrt-amdxdna = pkgs.callPackage ../pkgs/xrt-amdxdna {
+        inherit xrt xrt-plugin-amdxdna;
+      };
 
       # Firmware and kernel driver (local packages, not yet in nixpkgs)
       amdxdna-driver = pkgs.callPackage ../pkgs/amdxdna-driver {
