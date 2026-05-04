@@ -1,6 +1,6 @@
 {
-  lib,
   symlinkJoin,
+  makeWrapper,
   xrt,
   xrt-plugin-amdxdna,
 }:
@@ -15,6 +15,8 @@ symlinkJoin {
     xrt
     xrt-plugin-amdxdna
   ];
+
+  buildInputs = [ makeWrapper ];
 
   # Create symlinks so XRT can discover the XDNA plugin
   postBuild = ''
