@@ -8,8 +8,6 @@
       ...
     }:
     let
-      # XRT and Vitis AI packages come from nixpkgs fork (vitis-ai branch)
-      inherit (pkgs) xrt xrt-plugin-amdxdna xrt-amdxdna;
       inherit (pkgs)
         unilog
         xir
@@ -20,6 +18,12 @@
         xaiengine
         dynamic-dispatch
         ;
+
+      xrt = pkgs.callPackage ../pkgs/xrt { };
+
+      xrt-plugin-amdxdna = pkgs.callPackage ../pkgs/xrt-plugin-amdxdna { };
+
+      xrt-amdxdna = pkgs.callPackage ../pkgs/xrt-amdxdna { };
 
       # Firmware and kernel driver (local packages, not yet in nixpkgs)
       amdxdna-driver = pkgs.callPackage ../pkgs/amdxdna-driver {

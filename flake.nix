@@ -2,8 +2,7 @@
   description = "AMD Ryzen AI NPU support for NixOS (XRT + XDNA driver)";
 
   inputs = {
-    # Use fork with vitis-ai branch containing xrt, xrt-plugin-amdxdna, and NixOS module
-    nixpkgs.url = "github:z4m1n0/nixpkgs/vitis-ai";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     flake-parts.url = "github:hercules-ci/flake-parts";
   };
 
