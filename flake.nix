@@ -21,13 +21,13 @@
       # XRT and Vitis AI packages now come from nixpkgs fork (vitis-ai branch)
       flake.overlays.default = final: prev: {
 
-        xrt = final.callPackage ../pkgs/xrt { };
+        xrt = final.callPackage ./pkgs/xrt { };
 
-        xrt-plugin-amdxdna = final.callPackage ../pkgs/xrt-plugin-amdxdna {
+        xrt-plugin-amdxdna = final.callPackage ./pkgs/xrt-plugin-amdxdna {
           inherit (final) xrt;
         };
 
-        xrt-amdxdna = final.callPackage ../pkgs/xrt-amdxdna {
+        xrt-amdxdna = final.callPackage ./pkgs/xrt-amdxdna {
           inherit (final) xrt xrt-plugin-amdxdna;
         };
 
