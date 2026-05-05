@@ -21,7 +21,9 @@
 
       xrt = pkgs.callPackage ../pkgs/xrt { };
 
-      xrt-plugin-amdxdna = pkgs.callPackage ../pkgs/xrt-plugin-amdxdna { };
+      xrt-plugin-amdxdna = pkgs.callPackage ../pkgs/xrt-plugin-amdxdna {
+        inherit xrt;
+      };
 
       xrt-amdxdna = pkgs.callPackage ../pkgs/xrt-amdxdna {
         inherit xrt xrt-plugin-amdxdna;

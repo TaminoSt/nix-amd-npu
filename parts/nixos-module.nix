@@ -21,14 +21,14 @@
 
           package = lib.mkOption {
             type = lib.types.package;
-            default = pkgs.xrt-amdxdna or self.packages.${pkgs.system}.xrt-amdxdna;
+            default = pkgs.xrt-amdxdna or self.packages.${pkgs.stdenv.hostPlatform.system}.xrt-amdxdna;
             defaultText = lib.literalExpression "pkgs.xrt-amdxdna";
             description = "The XRT package with AMDXDNA plugin to use.";
           };
 
           firmwarePackage = lib.mkOption {
             type = lib.types.package;
-            default = pkgs.amdxdna-firmware or self.packages.${pkgs.system}.amdxdna-firmware;
+            default = pkgs.amdxdna-firmware or self.packages.${pkgs.stdenv.hostPlatform.system}.amdxdna-firmware;
             defaultText = lib.literalExpression "pkgs.amdxdna-firmware";
             description = "The firmware package for the AMD XDNA NPU.";
           };
@@ -37,7 +37,7 @@
             type = lib.types.nullOr lib.types.package;
             default =
               if lib.versionOlder config.boot.kernelPackages.kernel.version "7.0" then
-                (pkgs.amdxdna-driver or self.packages.${pkgs.system}.amdxdna-driver).override {
+                (pkgs.amdxdna-driver or self.packages.${pkgs.stdenv.hostPlatform.system}.amdxdna-driver).override {
                   kernel = config.boot.kernelPackages.kernel;
                 }
               else
