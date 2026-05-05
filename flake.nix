@@ -23,7 +23,9 @@
 
         xrt = final.callPackage ../pkgs/xrt { };
 
-        xrt-plugin-amdxdna = final.callPackage ../pkgs/xrt-plugin-amdxdna { };
+        xrt-plugin-amdxdna = final.callPackage ../pkgs/xrt-plugin-amdxdna {
+          inherit (final) xrt;
+        };
 
         xrt-amdxdna = final.callPackage ../pkgs/xrt-amdxdna {
           inherit (final) xrt xrt-plugin-amdxdna;
