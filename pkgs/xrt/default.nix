@@ -34,7 +34,7 @@ stdenv.mkDerivation rec {
     owner = "Xilinx";
     repo = "XRT";
     rev = version;
-    hash = "sha256-Foj33/U6waL81EzJ0ah66xCXEGWEkvhwmurKobfCevE=";
+    hash = "sha256-sujiSRZuIelhvUew7yeCfApAmp/Pf2+F38KO9cxI2HE=";
     fetchSubmodules = true;
   };
 
