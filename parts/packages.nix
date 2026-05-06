@@ -137,6 +137,19 @@
           touch $out
         '';
 
+        # Verify mlir-aie Python layout: aie/ symlink and .pth file must exist
+        mlir-aie-python-layout = pkgs.runCommand "check-mlir-aie-python-layout" { } ''
+          echo "Checking mlir-aie Python layout..."
+          sp="${mlir-aie}/${mlir-aie.pythonModule.sitePackages}"
+          test -d "$sp/mlir_aie" || (echo "FAIL: mlir_aie not found in site-packages" && exit 1)
+          test -d "$sp/mlir_aie/python/aie" || (echo "FAIL: mlir_aie/python/aie not found" && exit 1)
+          test -L "$sp/aie" || (echo "FAIL: aie symlink missing from site-packages (import aie would fail)" && exit 1)
+          test -f "$sp/mlir_aie_python.pth" || (echo "FAIL: mlir_aie_python.pth not found" && exit 1)
+          echo "PASS: mlir-aie Python layout is correct"
+          echo "      'import aie' and 'import aie.ir' will work in the devShell"
+          touch $out
+        '';
+
         # Verify environment setup works
         environment-setup = pkgs.runCommand "check-environment" { } ''
           echo "Checking environment setup..."

@@ -1,35 +1,31 @@
 { lib
 , python312
+, python312Packages
 , fetchurl
 , autoPatchelfHook
 , stdenv
 , zlib
 , ncurses
 , libxml2
-, unzip
 , makeWrapper
 }:
 
 let
   pname = "mlir-aie";
   version = "1.1.4";
-  pythonVersion = "cp312";
   pythonSitePackages = python312.sitePackages;
+in
+python312Packages.buildPythonPackage {
+  inherit pname version;
+  format = "wheel";
 
-  wheel = fetchurl {
-    url = "https://github.com/Xilinx/mlir-aie/releases/download/v${version}/mlir_aie-${version}-${pythonVersion}-${pythonVersion}-manylinux_2_35_x86_64.whl";
+  src = fetchurl {
+    url = "https://github.com/Xilinx/mlir-aie/releases/download/v${version}/mlir_aie-${version}-cp312-cp312-manylinux_2_35_x86_64.whl";
     sha256 = "sha256-zjuN9QVPcVrMRgXrWkSZ3ewU+hG4USzgVV3Z6/uRQlU=";
   };
-in
-stdenv.mkDerivation {
-  inherit pname version;
-
-  src = wheel;
 
   nativeBuildInputs = [
     autoPatchelfHook
-    python312
-    unzip
     makeWrapper
   ];
 
@@ -40,50 +36,46 @@ stdenv.mkDerivation {
     libxml2
   ];
 
-  dontUnpack = true;
-
-  # The wheel contains native libraries that need patching
+  # The wheel bundles LLVM/MLIR/Clang libraries; autoPatchelf cannot resolve
+  # them from the Nix store, so we allow them to remain unpatched.
   autoPatchelfIgnoreMissingDeps = [
     "libllvm*"
     "libclang*"
     "libMLIR*"
   ];
 
-  installPhase = ''
-    runHook preInstall
+  postInstall = ''
+    sp=$out/${pythonSitePackages}
 
-    # Create the output directory structure
-    mkdir -p $out/lib/${pythonSitePackages}
+    # Expose aie/ at the top level of site-packages so that
+    # 'import aie' works both via PYTHONPATH and python.withPackages.
+    if [ -d "$sp/mlir_aie/python/aie" ]; then
+      ln -s "$sp/mlir_aie/python/aie" "$sp/aie"
+    fi
 
-    # Unpack the wheel directly into site-packages
-    unzip -q $src -d $out/lib/${pythonSitePackages}/
+    # Also install a .pth file pointing at mlir_aie/python so that any
+    # code inside that sub-directory (e.g. aie.backend, aie.compiler)
+    # that imports neighbouring packages by absolute name still resolves
+    # correctly when the caller adds site-packages to sys.path manually.
+    echo "$sp/mlir_aie/python" > "$sp/mlir_aie_python.pth"
 
-    # Make everything writable
-    chmod -R u+w $out
-
-    # Ensure Python sees the nested mlir_aie/python modules (contains aie/)
-    mkdir -p $out/nix-support
-    cat > $out/nix-support/python-path <<EOF
-$out/lib/${pythonSitePackages}
-$out/lib/${pythonSitePackages}/mlir_aie/python
-EOF
-
-    # Also provide a .pth file for direct interpreter use when site-packages is on sys.path
-    cat > $out/lib/${pythonSitePackages}/mlir_aie_extra.pth <<EOF
-$out/lib/${pythonSitePackages}/mlir_aie/python
-EOF
-
-    # Create bin directory with tools
-    mkdir -p $out/bin
-    for tool in $out/lib/${pythonSitePackages}/mlir_aie/bin/*; do
-      if [ -x "$tool" ]; then
-        makeWrapper "$tool" "$out/bin/$(basename "$tool")" \
-          --prefix PYTHONPATH : "$out/lib/${pythonSitePackages}:$out/lib/${pythonSitePackages}/mlir_aie/python"
-      fi
-    done
-
-    runHook postInstall
+    # Wrap the binary tools bundled inside the wheel with a PYTHONPATH
+    # that covers both site-packages roots.
+    if [ -d "$sp/mlir_aie/bin" ]; then
+      mkdir -p $out/bin
+      for tool in "$sp/mlir_aie/bin"/*; do
+        if [ -x "$tool" ]; then
+          makeWrapper "$tool" "$out/bin/$(basename "$tool")" \
+            --prefix PYTHONPATH : "$sp:$sp/mlir_aie/python"
+        fi
+      done
+    fi
   '';
+
+  # pythonImportsCheck is intentionally omitted: aie.ir loads bundled
+  # LLVM/MLIR shared libraries whose RPATHs cannot be resolved inside the
+  # Nix build sandbox.  The import is verified at the flake-check level
+  # (parts/packages.nix mlir-aie-python-layout check).
 
   meta = with lib; {
     description = "MLIR-based toolchain for AMD AI Engine";

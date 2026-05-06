@@ -107,7 +107,8 @@
         iron = pkgs.mkShell {
           packages = [
             xrt-amdxdna
-            mlir-aie
+            # mlir-aie is a buildPythonPackage; include it via withPackages so
+            # that 'import aie' and 'import aie.ir' work out of the box.
             (pkgs.python312.withPackages (
               ps: with ps; [
                 numpy
@@ -121,7 +122,7 @@
                 # For MLIR-AIE
                 pybind11
                 ml-dtypes
-              ]
+              ] ++ [ mlir-aie ]
             ))
             pkgs.cmake
             pkgs.ninja
@@ -148,21 +149,18 @@
             export XILINX_XRT="${xrt-amdxdna}/opt/xilinx/xrt"
             export LD_LIBRARY_PATH="${xrt-amdxdna}/opt/xilinx/xrt/lib:''${LD_LIBRARY_PATH:-}"
 
-            # Add mlir-aie site-packages (for aie.pth to work)
-            export PYTHONPATH="${mlir-aie}/lib/python3.12/site-packages:${mlir-aie}/lib/python3.12/site-packages/mlir_aie/python:$PWD/pkgs/whisper-iron:''${PYTHONPATH:-}"
-
-            # Add mlir-aie binaries to PATH
-            export PATH="${mlir-aie}/lib/python3.12/site-packages/mlir_aie/bin:''${PATH:-}"
+            # mlir-aie is in python312.withPackages above; the aie/ symlink
+            # in site-packages makes 'import aie; import aie.ir' work.
 
             echo "NPU Status:"
-            _check_npu
-            echo ""
-            echo "Whisper-IRON: Speech recognition on AMD NPU"
             echo ""
             echo "Quick start:"
             echo "  cd pkgs/whisper-iron"
             echo "  python tests/test_npu.py        # Run NPU tests"
             echo "  python transcribe.py audio.wav  # Transcribe audio"
+            echo ""
+            echo "Verify aie bindings:"
+            echo "  python -c 'import aie; import aie.ir; print(\"ok\")'"
             echo ""
           '';
         };
@@ -241,7 +239,8 @@
         whisper = pkgs.mkShell {
           packages = [
             xrt-amdxdna
-            mlir-aie
+            # mlir-aie is a buildPythonPackage; include it via withPackages so
+            # that 'import aie' and 'import aie.ir' work out of the box.
             (pkgs.python312.withPackages (
               ps: with ps; [
                 numpy
@@ -253,7 +252,7 @@
                 torch
                 # For MLIR-AIE
                 ml-dtypes
-              ]
+              ] ++ [ mlir-aie ]
             ))
             pkgs.cmake
             pkgs.ninja
@@ -278,8 +277,9 @@
 
             export XILINX_XRT="${xrt-amdxdna}/opt/xilinx/xrt"
             export LD_LIBRARY_PATH="${xrt-amdxdna}/opt/xilinx/xrt/lib:''${LD_LIBRARY_PATH:-}"
-            export PYTHONPATH="${mlir-aie}/lib/python3.12/site-packages:${mlir-aie}/lib/python3.12/site-packages/mlir_aie/python:$PWD/pkgs/whisper-iron:''${PYTHONPATH:-}"
-            export PATH="${mlir-aie}/lib/python3.12/site-packages/mlir_aie/bin:''${PATH:-}"
+
+            # mlir-aie is in python312.withPackages above; the aie/ symlink
+            # in site-packages makes 'import aie; import aie.ir' work.
 
             echo "NPU Status:"
             _check_npu
