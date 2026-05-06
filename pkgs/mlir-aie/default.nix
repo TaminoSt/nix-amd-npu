@@ -7,12 +7,14 @@
 , ncurses
 , libxml2
 , unzip
+, makeWrapper
 }:
 
 let
   pname = "mlir-aie";
   version = "1.1.4";
   pythonVersion = "cp312";
+  pythonSitePackages = python312.sitePackages;
 
   wheel = fetchurl {
     url = "https://github.com/Xilinx/mlir-aie/releases/download/v${version}/mlir_aie-${version}-${pythonVersion}-${pythonVersion}-manylinux_2_35_x86_64.whl";
@@ -28,6 +30,7 @@ stdenv.mkDerivation {
     autoPatchelfHook
     python312
     unzip
+    makeWrapper
   ];
 
   buildInputs = [
@@ -38,6 +41,9 @@ stdenv.mkDerivation {
   ];
 
   dontUnpack = true;
+
+  # Expose Python modules to consuming Python environments.
+  propagatedBuildInputs = [ python312 ];
 
   # The wheel contains native libraries that need patching
   autoPatchelfIgnoreMissingDeps = [
@@ -50,19 +56,25 @@ stdenv.mkDerivation {
     runHook preInstall
 
     # Create the output directory structure
-    mkdir -p $out/lib/python3.12/site-packages
+    mkdir -p $out/lib/${pythonSitePackages}
 
     # Unpack the wheel
-    unzip -q $src -d $out/lib/python3.12/site-packages/
+    unzip -q $src -d $out/lib/${pythonSitePackages}/
 
     # Make everything writable
     chmod -R u+w $out
 
+    # Ensure the wheel's extra python path is automatically loaded
+    cat > $out/lib/${pythonSitePackages}/aie.pth <<EOF
+$out/lib/${pythonSitePackages}/mlir_aie/python
+EOF
+
     # Create bin directory with tools
     mkdir -p $out/bin
-    for tool in $out/lib/python3.12/site-packages/mlir_aie/bin/*; do
+    for tool in $out/lib/${pythonSitePackages}/mlir_aie/bin/*; do
       if [ -x "$tool" ]; then
-        ln -s "$tool" $out/bin/$(basename "$tool")
+        makeWrapper "$tool" "$out/bin/$(basename "$tool")" \
+          --prefix PYTHONPATH : "$out/lib/${pythonSitePackages}:$out/lib/${pythonSitePackages}/mlir_aie/python"
       fi
     done
 
