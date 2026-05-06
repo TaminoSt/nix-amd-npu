@@ -42,9 +42,6 @@ stdenv.mkDerivation {
 
   dontUnpack = true;
 
-  # Expose Python modules to consuming Python environments.
-  propagatedBuildInputs = [ python312 ];
-
   # The wheel contains native libraries that need patching
   autoPatchelfIgnoreMissingDeps = [
     "libllvm*"
@@ -58,14 +55,21 @@ stdenv.mkDerivation {
     # Create the output directory structure
     mkdir -p $out/lib/${pythonSitePackages}
 
-    # Unpack the wheel
+    # Unpack the wheel directly into site-packages
     unzip -q $src -d $out/lib/${pythonSitePackages}/
 
     # Make everything writable
     chmod -R u+w $out
 
-    # Ensure the wheel's extra python path is automatically loaded
-    cat > $out/lib/${pythonSitePackages}/aie.pth <<EOF
+    # Ensure Python sees the nested mlir_aie/python modules (contains aie/)
+    mkdir -p $out/nix-support
+    cat > $out/nix-support/python-path <<EOF
+$out/lib/${pythonSitePackages}
+$out/lib/${pythonSitePackages}/mlir_aie/python
+EOF
+
+    # Also provide a .pth file for direct interpreter use when site-packages is on sys.path
+    cat > $out/lib/${pythonSitePackages}/mlir_aie_extra.pth <<EOF
 $out/lib/${pythonSitePackages}/mlir_aie/python
 EOF
 
