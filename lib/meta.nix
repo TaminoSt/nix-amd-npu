@@ -34,15 +34,6 @@
       "broken"
     ]);
 
-  # Common meta for Vitis AI components
-  vitisAiMeta = description: {
-    inherit description;
-    homepage = "https://github.com/amd";
-    license = lib.licenses.asl20;
-    platforms = [ "x86_64-linux" ];
-    maintainers = [ ];
-  };
-
   # Common meta for XRT components
   xrtMeta = description: {
     inherit description;

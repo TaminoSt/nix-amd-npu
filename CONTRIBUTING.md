@@ -4,7 +4,7 @@ Thank you for your interest in contributing! This guide will help you get starte
 
 ## Project Overview
 
-This repository provides Nix packages and NixOS modules for AMD Ryzen AI NPU support. The goal is to enable hardware-accelerated AI inference on AMD Ryzen AI processors with a clean, reproducible Nix-based build system.
+This repository provides Nix packages and NixOS modules for AMD Ryzen AI NPU support.
 
 ## Architecture
 
@@ -14,8 +14,7 @@ nix-amd-npu/
 ├── lib/                   # Shared Nix functions
 │   ├── default.nix        # Library entry point
 │   ├── versions.nix       # Centralized version management
-│   ├── meta.nix           # Shared meta attributes
-│   └── vitis-common.nix   # Build helpers for Vitis AI packages
+│   └── meta.nix           # Shared meta attributes
 ├── parts/                 # Flake-parts modules
 │   ├── packages.nix       # Package definitions and tests
 │   ├── devshell.nix       # Development shells
@@ -23,10 +22,7 @@ nix-amd-npu/
 └── pkgs/                  # Package derivations
     ├── xrt/               # Xilinx Runtime
     ├── xrt-plugin-amdxdna/# XDNA driver plugin
-    ├── vitis-ai/          # Vitis AI components (8 packages)
-    ├── onnxruntime-vitisai/ # ONNX Runtime with VitisAI EP
-    ├── mlir-aie/          # MLIR-AIE for NPU kernels
-    └── whisper-iron/      # Demo application
+    └── mlir-aie/          # MLIR-AIE for NPU kernels
 ```
 
 ## Development Setup
@@ -56,10 +52,8 @@ xrt-smi examine
 | Shell | Purpose | Command |
 |-------|---------|---------|
 | `default` | Basic XRT development | `nix develop` |
-| `vitisai` | ONNX Runtime with VitisAI EP | `nix develop .#vitisai` |
 | `iron` | MLIR-AIE kernel development | `nix develop .#iron` |
 | `iron-full` | Full IRON with pip support | `nix develop .#iron-full` |
-| `whisper` | Whisper-IRON development | `nix develop .#whisper` |
 
 ## Building Packages
 
@@ -69,8 +63,6 @@ nix build
 
 # Build a specific package
 nix build .#xrt
-nix build .#unilog
-nix build .#onnxruntime-vitisai
 
 # Run integration tests
 nix flake check
@@ -119,23 +111,6 @@ stdenv.mkDerivation rec {
 }
 ```
 
-### Common Build Fixes
-
-The `lib/vitis-common.nix` provides helpers for common issues:
-
-```nix
-# GCC 15 compatibility (missing cstdint)
-postPatch = lib.addGcc15Compat + ''
-  # other patches...
-'';
-
-# Remove -Werror from cmake
-postPatch = lib.removeWerror + ''...'';
-
-# Create fake git repo for version detection
-postPatch = lib.fakeGitRepo + ''...'';
-```
-
 ## Version Management
 
 All package versions are centralized in `lib/versions.nix`. When updating a package:
@@ -156,7 +131,6 @@ nix flake check
 
 # Run specific checks
 nix build .#checks.x86_64-linux.xrt-binaries
-nix build .#checks.x86_64-linux.plugin-library
 ```
 
 ### Manual Testing
@@ -165,11 +139,6 @@ nix build .#checks.x86_64-linux.plugin-library
 # Verify XRT works
 xrt-smi examine
 xrt-smi validate
-
-# Test ONNX Runtime VitisAI EP
-nix develop .#vitisai
-python -c "import onnxruntime as ort; print(ort.get_available_providers())"
-```
 
 ## Code Style
 
@@ -187,7 +156,7 @@ Follow conventional commits format:
 feat: add new package foo
 fix(xrt): resolve build issue with GCC 15
 docs: update installation instructions
-refactor(vitis-ai): extract common build helpers
+refactor(mlir): extract common build helpers
 ```
 
 ## Pull Request Process
@@ -216,7 +185,6 @@ This project is licensed under the MIT License. Contributions are accepted under
 ## Resources
 
 - [XRT Documentation](https://xilinx.github.io/XRT/)
-- [AMD Ryzen AI Developer Resources](https://www.amd.com/en/developer/resources/ryzen-ai-software.html)
 - [MLIR-AIE Documentation](https://xilinx.github.io/mlir-aie/)
 - [Nix Manual](https://nixos.org/manual/nix/stable/)
 - [NixOS Wiki](https://wiki.nixos.org/)

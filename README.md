@@ -33,7 +33,7 @@ Add to your flake:
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nix-amd-npu.url = "github:robcohen/nix-amd-npu";
+    nix-amd-npu.url = "github:TaminoSt/nix-amd-npu";
   };
 
   outputs = { self, nixpkgs, nix-amd-npu, ... }: {
@@ -74,7 +74,7 @@ The module configures:
 ### Development Shell
 
 ```bash
-nix develop github:robcohen/nix-amd-npu
+nix develop github:TaminoSt/nix-amd-npu
 
 # Check NPU detection
 xrt-smi examine

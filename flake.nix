@@ -18,7 +18,6 @@
       ];
 
       # Overlay adds packages not yet in nixpkgs fork
-      # XRT and Vitis AI packages now come from nixpkgs fork (vitis-ai branch)
       flake.overlays.default = final: prev: {
 
         xrt = final.callPackage ./pkgs/xrt { };
@@ -34,19 +33,9 @@
         # Firmware and kernel driver (not yet in nixpkgs)
         amdxdna-firmware = final.callPackage ./pkgs/amdxdna-firmware { };
 
-        # ONNX Runtime with VitisAI EP (not yet in nixpkgs)
-        onnxruntime-vitisai = final.callPackage ./pkgs/onnxruntime-vitisai { };
-
         # MLIR-AIE for NPU kernel development (not yet in nixpkgs)
         mlir-aie = final.callPackage ./pkgs/mlir-aie { };
 
-        # Whisper-IRON speech recognition (not yet in nixpkgs)
-        whisper-iron = final.callPackage ./pkgs/whisper-iron {
-          inherit (final) mlir-aie;
-        };
-
-        # FastFlowLM NPU-optimized LLM runtime (not yet in nixpkgs)
-        fastflowlm = final.callPackage ./pkgs/fastflowlm { };
       };
 
       perSystem =

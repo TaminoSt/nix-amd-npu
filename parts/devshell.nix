@@ -5,7 +5,6 @@
     let
       xrt = config.packages.xrt;
       xrt-amdxdna = config.packages.xrt-amdxdna;
-      onnxruntime-vitisai = config.packages.onnxruntime-vitisai;
       mlir-aie = config.packages.mlir-aie;
 
       # Shared NPU detection script for all shells
@@ -58,48 +57,6 @@
           '';
         };
 
-        # VitisAI development shell with ONNX Runtime (from-source only)
-        vitisai = pkgs.mkShell {
-          packages = [
-            xrt-amdxdna
-            onnxruntime-vitisai
-            config.packages.python-onnxruntime-vitisai
-            config.packages.dynamic-dispatch
-            (pkgs.python313.withPackages (ps: [
-              ps.numpy
-              ps.coloredlogs
-              ps.packaging
-            ]))
-          ];
-
-          shellHook = ''
-            ${npuDetectionScript}
-
-            echo "=============================================="
-            echo "  AMD Ryzen AI NPU + ONNX Runtime VitisAI EP"
-            echo "=============================================="
-            echo "XRT version: ${xrt.version}"
-            echo "ONNX Runtime: ${onnxruntime-vitisai.version}"
-            echo ""
-
-            export XILINX_XRT="${xrt-amdxdna}/opt/xilinx/xrt"
-            export LD_LIBRARY_PATH="${xrt-amdxdna}/opt/xilinx/xrt/lib:${onnxruntime-vitisai}/lib:''${LD_LIBRARY_PATH:-}"
-            export PYTHONPATH="${config.packages.python-onnxruntime-vitisai}/lib/python3.13/site-packages:''${PYTHONPATH:-}"
-
-            echo "NPU Status:"
-            _check_npu
-            echo ""
-            echo "VitisAI EP: REGISTERED"
-            echo ""
-            echo "Test with:"
-            echo "  python -c 'import onnxruntime as ort; print(ort.get_available_providers())'"
-            echo ""
-            echo "NOTE: For full NPU inference, you need AMD's VAIP runtime from:"
-            echo "      https://www.amd.com/en/developer/resources/ryzen-ai-software.html"
-            echo ""
-          '';
-        };
-
         # Note: ryzen-ai-full shell requires unfree packages
         # Use: NIXPKGS_ALLOW_UNFREE=1 nix develop .#ryzen-ai-full --impure
 
@@ -130,9 +87,6 @@
             pkgs.xorg.libXrender
             pkgs.xorg.libXtst
             pkgs.xorg.libXi
-            # Audio processing for Whisper
-            pkgs.ffmpeg
-            pkgs.libsndfile
           ];
 
           shellHook = ''
@@ -149,20 +103,13 @@
             export LD_LIBRARY_PATH="${xrt-amdxdna}/opt/xilinx/xrt/lib:''${LD_LIBRARY_PATH:-}"
 
             # Add mlir-aie site-packages (for aie.pth to work)
-            export PYTHONPATH="${mlir-aie}/lib/python3.12/site-packages:${mlir-aie}/lib/python3.12/site-packages/mlir_aie/python:$PWD/pkgs/whisper-iron:''${PYTHONPATH:-}"
+            export PYTHONPATH="${mlir-aie}/lib/python3.12/site-packages:${mlir-aie}/lib/python3.12/site-packages/mlir_aie/python:''${PYTHONPATH:-}"
 
             # Add mlir-aie binaries to PATH
             export PATH="${mlir-aie}/lib/python3.12/site-packages/mlir_aie/bin:''${PATH:-}"
 
             echo "NPU Status:"
             _check_npu
-            echo ""
-            echo "Whisper-IRON: Speech recognition on AMD NPU"
-            echo ""
-            echo "Quick start:"
-            echo "  cd pkgs/whisper-iron"
-            echo "  python tests/test_npu.py        # Run NPU tests"
-            echo "  python transcribe.py audio.wav  # Transcribe audio"
             echo ""
           '';
         };
@@ -177,28 +124,33 @@
               name = "iron-fhs";
               targetPkgs = pkgs: [
                 xrt-amdxdna
+                mlir-aie
                 pkgs.python312
                 pkgs.python312Packages.pip
                 pkgs.python312Packages.virtualenv
-                # Build dependencies for eudsl-python-extras
+                # Toolchain dependencies
                 pkgs.cmake
                 pkgs.ninja
-                pkgs.clang_18
-                pkgs.lld_18
+                pkgs.clang
+                pkgs.lld
                 pkgs.git
                 # Runtime dependencies
                 pkgs.zlib
                 pkgs.ncurses
                 pkgs.libxml2
                 pkgs.stdenv.cc.cc.lib
-                # For audio processing
-                pkgs.ffmpeg
-                pkgs.libsndfile
+                pkgs.util-linux.dev
               ];
               runScript = "bash";
               profile = ''
                 export XILINX_XRT="${xrt-amdxdna}/opt/xilinx/xrt"
                 export LD_LIBRARY_PATH="${xrt-amdxdna}/opt/xilinx/xrt/lib:''${LD_LIBRARY_PATH:-}"
+
+                # Add mlir-aie and XRT python modules
+                export PYTHONPATH="${xrt-amdxdna}/opt/xilinx/xrt/python:$(paste -sd: ${mlir-aie}/nix-support/python-path):''${PYTHONPATH:-}"
+
+                # Add mlir-aie binaries to PATH
+                export PATH="${mlir-aie}/bin:''${PATH:-}"
 
                 # Create virtualenv in cache directory if it doesn't exist
                 VENV_DIR="${venvDir}"
@@ -208,6 +160,49 @@
                   python3 -m venv "$VENV_DIR"
                 fi
                 source "$VENV_DIR/bin/activate"
+
+                # Set PEANO_INSTALL_DIR to the llvm-aie package installed in the venv.
+                # Use a glob so this works regardless of the Python minor version.
+                for _peano_candidate in "$VENV_DIR"/lib/python*/site-packages/llvm-aie; do
+                  if [ -x "$_peano_candidate/bin/clang++" ]; then
+                    export PEANO_INSTALL_DIR="$_peano_candidate"
+                    break
+                  fi
+                done
+                unset _peano_candidate
+
+                # Detect NPU generation; mirrors env_setup.sh logic.
+                # NPU2=1 → npu2/aie2p target (Strix, Strix Halo, Krackan, npu4/5/6)
+                # NPU2=0 → npu/aie2 target (Phoenix, npu1)
+                _NPUPAT='NPU Strix|NPU Strix Halo|NPU Krackan|RyzenAI-npu[456]'
+                if xrt-smi examine 2>/dev/null | tr -d '\r' | grep -qE "$_NPUPAT"; then
+                  export NPU2=1
+                else
+                  export NPU2=0
+                fi
+                unset _NPUPAT
+
+                # Set MLIR_AIE_INSTALL_DIR to the mlir_aie package root.
+                export MLIR_AIE_INSTALL_DIR="${mlir-aie}/lib/lib/python3.12/site-packages/mlir_aie"
+
+                # Add mlir-aie bundled runtime libs (mirrors env_setup.sh).
+                export LD_LIBRARY_PATH="${mlir-aie}/lib/lib/python3.12/site-packages/mlir_aie.libs:''${LD_LIBRARY_PATH:-}"
+
+                # Automatic first-time setup for IRON Python deps
+                SETUP_STAMP="$VENV_DIR/.iron-setup-complete"
+                if [ ! -f "$SETUP_STAMP" ]; then
+                  echo "Running first-time IRON setup in $VENV_DIR..."
+                  pip install numpy==1.26.4 aiofiles cloudpickle ml_dtypes rich
+                  pip install llvm-aie -f https://github.com/Xilinx/llvm-aie/releases/expanded_assets/nightly
+                  pip install eudsl-python-extras -f https://llvm.github.io/eudsl
+                  if python -c 'import pyxrt; from aie.iron import ObjectFifo' >/dev/null 2>&1; then
+                    touch "$SETUP_STAMP"
+                  else
+                    echo "IRON setup validation failed." >&2
+                    return 1
+                  fi
+                fi
+
                 echo "Activated virtualenv: $VENV_DIR"
               '';
             };
@@ -224,73 +219,11 @@
               echo "NPU Status:"
               _check_npu
               echo ""
-              echo "Run 'iron-fhs' to enter the FHS environment, then:"
-              echo ""
-              echo "Setup IRON (first time only):"
-              echo "  pip install mlir_aie -f https://github.com/Xilinx/mlir-aie/releases/expanded_assets/latest-wheels-2"
-              echo "  pip install llvm-aie -f https://github.com/Xilinx/llvm-aie/releases/expanded_assets/nightly"
-              echo "  EUDSL_PYTHON_EXTRAS_HOST_PACKAGE_PREFIX=aie pip install eudsl-python-extras -f https://llvm.github.io/eudsl"
-              echo ""
-              echo "Then test:"
-              echo "  python -c 'from aie.iron import ObjectFifo; print(\"IRON works!\")'"
+              echo "Run 'iron-fhs' to enter the FHS environment, test:"
+              echo "  python -c 'import pyxrt; from aie.iron import ObjectFifo; print(\"IRON works!\")'"
               echo ""
             '';
           };
-
-        # Whisper-IRON shell (same as iron, kept for backwards compat)
-        whisper = pkgs.mkShell {
-          packages = [
-            xrt-amdxdna
-            mlir-aie
-            (pkgs.python312.withPackages (
-              ps: with ps; [
-                numpy
-                scipy
-                pytest
-                librosa
-                soundfile
-                transformers
-                torch
-                # For MLIR-AIE
-                ml-dtypes
-              ]
-            ))
-            pkgs.cmake
-            pkgs.ninja
-            pkgs.clang
-            pkgs.lld
-            pkgs.xorg.libXrender
-            pkgs.xorg.libXtst
-            pkgs.xorg.libXi
-            pkgs.ffmpeg
-            pkgs.libsndfile
-          ];
-
-          shellHook = ''
-            ${npuDetectionScript}
-
-            echo "=============================================="
-            echo "  Whisper-IRON: Speech Recognition on NPU"
-            echo "=============================================="
-            echo "XRT version: ${xrt.version}"
-            echo "MLIR-AIE version: ${mlir-aie.version}"
-            echo ""
-
-            export XILINX_XRT="${xrt-amdxdna}/opt/xilinx/xrt"
-            export LD_LIBRARY_PATH="${xrt-amdxdna}/opt/xilinx/xrt/lib:''${LD_LIBRARY_PATH:-}"
-            export PYTHONPATH="${mlir-aie}/lib/python3.12/site-packages:${mlir-aie}/lib/python3.12/site-packages/mlir_aie/python:$PWD/pkgs/whisper-iron:''${PYTHONPATH:-}"
-            export PATH="${mlir-aie}/lib/python3.12/site-packages/mlir_aie/bin:''${PATH:-}"
-
-            echo "NPU Status:"
-            _check_npu
-            echo ""
-            echo "Usage:"
-            echo "  cd pkgs/whisper-iron"
-            echo "  python tests/test_npu.py        # Test kernels"
-            echo "  python transcribe.py audio.wav  # Transcribe"
-            echo ""
-          '';
-        };
       };
     };
 }

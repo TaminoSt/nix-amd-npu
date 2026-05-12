@@ -8,16 +8,7 @@
       ...
     }:
     let
-      inherit (pkgs)
-        unilog
-        xir
-        target-factory
-        vart
-        trace-logging
-        graph-engine
-        xaiengine
-        dynamic-dispatch
-        ;
+      inherit (pkgs) ;
 
       xrt = pkgs.callPackage ../pkgs/xrt { };
 
@@ -36,34 +27,8 @@
 
       amdxdna-firmware = pkgs.callPackage ../pkgs/amdxdna-firmware { };
 
-      # ONNX Runtime with VitisAI EP (C++ library) - not yet in nixpkgs
-      onnxruntime-vitisai = pkgs.callPackage ../pkgs/onnxruntime-vitisai { };
-
-      # Python bindings for ONNX Runtime with VitisAI EP
-      python-onnxruntime-vitisai = pkgs.callPackage ../pkgs/python-onnxruntime-vitisai {
-        inherit onnxruntime-vitisai;
-      };
-
-      # AMD pre-built components (unfree, requires manual download)
-      ryzen-ai-software = pkgs.callPackage ../pkgs/ryzen-ai-software { };
-
-      ryzen-ai-xclbin = pkgs.callPackage ../pkgs/ryzen-ai-xclbin { };
-
       # MLIR-AIE for NPU kernel development
       mlir-aie = pkgs.callPackage ../pkgs/mlir-aie { };
-
-      # Whisper-IRON speech recognition demo
-      whisper-iron = pkgs.callPackage ../pkgs/whisper-iron {
-        inherit mlir-aie;
-      };
-
-      # FastFlowLM NPU-optimized LLM runtime
-      fastflowlm = pkgs.callPackage ../pkgs/fastflowlm { };
-
-      # Complete Ryzen AI stack (combines from-source + pre-built)
-      ryzen-ai-full = pkgs.callPackage ../pkgs/ryzen-ai-full {
-        inherit onnxruntime-vitisai;
-      };
     in
     {
       packages = {
@@ -74,26 +39,9 @@
           xrt
           xrt-plugin-amdxdna
           xrt-amdxdna
-          unilog
-          xir
-          target-factory
-          vart
-          trace-logging
-          graph-engine
-          xaiengine
-          dynamic-dispatch
-          onnxruntime-vitisai
-          python-onnxruntime-vitisai
           mlir-aie
-          whisper-iron
-          fastflowlm
           ;
         default = xrt-amdxdna;
-      };
-
-      # Unfree packages available via legacyPackages (requires NIXPKGS_ALLOW_UNFREE=1)
-      legacyPackages = {
-        inherit ryzen-ai-software ryzen-ai-xclbin ryzen-ai-full;
       };
 
       # Integration tests - run with `nix flake check`

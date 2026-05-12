@@ -12,13 +12,13 @@
 
 let
   pname = "mlir-aie";
-  version = "1.1.4";
+  version = "1.3.1";
   pythonVersion = "cp312";
   pythonSitePackages = python312.sitePackages;
 
   wheel = fetchurl {
     url = "https://github.com/Xilinx/mlir-aie/releases/download/v${version}/mlir_aie-${version}-${pythonVersion}-${pythonVersion}-manylinux_2_35_x86_64.whl";
-    sha256 = "sha256-zjuN9QVPcVrMRgXrWkSZ3ewU+hG4USzgVV3Z6/uRQlU=";
+    sha256 = "sha256-bcsZOvw26iig0hQdmClq8IYae67CTArXN03McXFcxLg=";
   };
 in
 stdenv.mkDerivation {
